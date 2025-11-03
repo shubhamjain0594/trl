@@ -149,6 +149,57 @@ training_args = GKDConfig(..., use_liger_kernel=True)
 </hfoption>
 </hfoptions>
 
+## Gradient accumulation
+
+When training with limited GPU memory, gradient accumulation allows you to simulate larger batch sizes by accumulating gradients over multiple steps before updating weights. This technique reduces memory usage while maintaining the training dynamics of larger batch sizes.
+
+For example, if you want an effective batch size of 32 but can only fit a batch size of 4 in GPU memory, you can use `gradient_accumulation_steps=8` to achieve the same result:
+
+<hfoptions id="gradient_accumulation">
+<hfoption id="DPO">
+
+```python
+from trl import DPOConfig
+
+# Simulate batch size of 32: 4 (per_device) × 8 (accumulation steps) = 32 (effective)
+training_args = DPOConfig(
+    output_dir="Qwen2.5-0.5B-DPO",
+    per_device_train_batch_size=4,
+    gradient_accumulation_steps=8,
+)
+```
+
+</hfoption>
+<hfoption id="SFT">
+
+```python
+from trl import SFTConfig
+
+# Simulate batch size of 32: 4 (per_device) × 8 (accumulation steps) = 32 (effective)
+training_args = SFTConfig(
+    output_dir="Qwen2.5-0.5B-SFT",
+    per_device_train_batch_size=4,
+    gradient_accumulation_steps=8,
+)
+```
+
+</hfoption>
+<hfoption id="Reward">
+
+```python
+from trl import RewardConfig
+
+# Simulate batch size of 32: 4 (per_device) × 8 (accumulation steps) = 32 (effective)
+training_args = RewardConfig(
+    output_dir="Qwen2.5-0.5B-Reward",
+    per_device_train_batch_size=4,
+    gradient_accumulation_steps=8,
+)
+```
+
+</hfoption>
+</hfoptions>
+
 ## Padding-free
 
 Padding-free batching is an alternative approach for reducing memory usage. In this method, a batch is first sampled and then flattened into a single sequence, avoiding padding. Unlike packing, which can result in incomplete sequences by combining parts of different samples, padding-free batching ensures that all sequences remain complete and intact.

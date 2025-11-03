@@ -185,7 +185,9 @@ trainer.train()
 
 ## Use mixed precision training
 
-Mixed precision training can significantly speed up training and reduce memory usage. You can enable it by setting `bf16=True` or `fp16=True` in the training config.
+Mixed precision training can significantly speed up training and reduce memory usage. **Note: TRL uses `bf16=True` by default**, which is optimal for modern GPUs with Ampere architecture or newer (A100, RTX 30xx/40xx).
+
+You can override the default mixed precision settings if needed:
 
 ```python
 from datasets import load_dataset
@@ -196,8 +198,11 @@ model = AutoModelForCausalLM.from_pretrained("Qwen/Qwen2.5-0.5B-Instruct")
 tokenizer = AutoTokenizer.from_pretrained("Qwen/Qwen2.5-0.5B-Instruct")
 dataset = load_dataset("trl-lib/ultrafeedback_binarized", split="train")
 
-# Use bfloat16 precision (recommended for modern GPUs)
-training_args = DPOConfig(output_dir="Qwen2.5-0.5B-DPO", bf16=True)
+# Override to use float16 for older GPUs that don't support bfloat16
+training_args = DPOConfig(output_dir="Qwen2.5-0.5B-DPO", fp16=True, bf16=False)
+
+# Or disable mixed precision entirely for full float32 training
+# training_args = DPOConfig(output_dir="Qwen2.5-0.5B-DPO", fp16=False, bf16=False)
 
 trainer = DPOTrainer(
     model=model,
@@ -208,36 +213,7 @@ trainer = DPOTrainer(
 trainer.train()
 ```
 
-Note: Use `bf16=True` for Ampere GPUs (A100, RTX 30xx) or newer, and `fp16=True` for older GPUs.
-
-## Use gradient accumulation
-
-When training with limited GPU memory, gradient accumulation allows you to simulate larger batch sizes by accumulating gradients over multiple steps before updating weights.
-
-```python
-from datasets import load_dataset
-from transformers import AutoModelForCausalLM, AutoTokenizer
-from trl import DPOConfig, DPOTrainer
-
-model = AutoModelForCausalLM.from_pretrained("Qwen/Qwen2.5-0.5B-Instruct")
-tokenizer = AutoTokenizer.from_pretrained("Qwen/Qwen2.5-0.5B-Instruct")
-dataset = load_dataset("trl-lib/ultrafeedback_binarized", split="train")
-
-# Simulate a batch size of 32 with per_device_train_batch_size=4 and gradient_accumulation_steps=8
-training_args = DPOConfig(
-    output_dir="Qwen2.5-0.5B-DPO",
-    per_device_train_batch_size=4,
-    gradient_accumulation_steps=8,
-)
-
-trainer = DPOTrainer(
-    model=model,
-    args=training_args,
-    train_dataset=dataset,
-    tokenizer=tokenizer,
-)
-trainer.train()
-```
+Use `fp16=True, bf16=False` for older GPUs that don't support bfloat16, or `fp16=False, bf16=False` to disable mixed precision completely.
 
 ## Use a custom data collator
 
